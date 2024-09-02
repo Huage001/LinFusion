@@ -17,6 +17,9 @@
 > [Learning and Vision Lab](http://lv-nus.org/), National University of Singapore
 > <br>
 
+## Supported Models
+1. `Yuanshi/LinFusion-1-5`: For Stable Diffusion 1.5 and its variants. <a href="https://huggingface.co/Yuanshi/LinFusion-1-5"><img src="https://img.shields.io/badge/%F0%9F%A4%97-LinFusion for 1.5-yellow"></a>
+
 
 ## Quick Start
 * **Basic Usage of LinFusion:** (can be found in the `examples/basic_usage.ipynb` file.)
@@ -42,7 +45,7 @@ image = pipeline(
 	"An astronaut floating in space. Beautiful view of the stars and the universe in the background."
 ).images[0]
 ```
-`LinFusion.construct_for(pipeline)` will return a LinFusion model that matches the pipeline's structure. And this LinFusion model will automatically mount to the pipeline's forward function.
+`LinFusion.construct_for(pipeline)` will return a LinFusion model that matches the pipeline's structure. And this LinFusion model will **automatically mount to** the pipeline's forward function.
 
 ## Customization
 * **Specific the LinFusion model path:** 
