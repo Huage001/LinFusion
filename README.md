@@ -19,7 +19,7 @@
 
 
 ## Basic Usage
-* **Basic Usage of LinFusion:** can be found in the `src/linfusion.py` file. 
+* **Basic Usage of LinFusion:** can be found in the `examples/basic_usage.ipynb` file. 
 ```python
 from diffusers import AutoPipelineForText2Image
 import torch
