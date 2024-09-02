@@ -18,8 +18,10 @@
 > <br>
 
 
-## Basic Usage
-* **Basic Usage of LinFusion:** can be found in the `examples/basic_usage.ipynb` file. 
+## Quick Start
+* **Basic Usage of LinFusion:** (can be found in the `examples/basic_usage.ipynb` file.)
+
+
 ```python
 from diffusers import AutoPipelineForText2Image
 import torch
@@ -40,6 +42,38 @@ image = pipeline(
 	"An astronaut floating in space. Beautiful view of the stars and the universe in the background."
 ).images[0]
 ```
+`LinFusion.construct_for(pipeline)` will return a LinFusion model that matches the pipeline's structure. And this LinFusion model will automatically mount to the pipeline's forward function.
+
+## Customization
+* **Specific the LinFusion model path:** 
+```python
+linfusion = LinFusion.construct_for(
+    pipeline,
+    pretrained_model_name_or_path = "[path to the model]"
+)
+```
+
+* **Construct LinFusion model with specific parameters:** 
+
+**Step 1.** Get the default parameters for some specific model:
+```python
+config = LinFusion.get_default_config(pipeline)
+```
+**Step 2.** Modify the parameters you want to change.
+```python
+config["modules_list"][0]["projection_mid_dim"] = 128
+```
+
+**Step 3.** Construct the LinFusion model by passing the modified parameters:
+```python
+linfusion = LinFusion(**config)
+```
+
+**Step 4.** Mount the LinFusion model to the pipeline:
+```python
+linfusion.mount_to(pipeline)
+```
+
 
 
 ## ToDo
