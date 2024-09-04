@@ -1,8 +1,7 @@
 <div align="center">
 
 # LinFusion
-<a href="https://arxiv.org/"><img src="https://img.shields.io/badge/arXiv-xxxx.xxxx-A42C25.svg" alt="arXiv"></a> [[Project Page](https://lv-linfusion.github.io)]
-<!-- TODO: Change the arxiv img -->
+<a href="https://arxiv.org/"><img src="https://img.shields.io/badge/arXiv-2409.02097-A42C25.svg" alt="arXiv"></a> [[Project Page](https://lv-linfusion.github.io)]
 </div>
 
 
@@ -66,7 +65,7 @@ If you finds this repo is helpful, please consider cite:
   title     = {LinFusion: 1 GPU, 1 Minute, 16K Image},
   author    = {Liu, Songhua and Yu, Weihao and Tan, Zhenxiong and Wang, Xinchao},
   year      = {2024},
-  eprint    = {2409.xxxxx},
+  eprint    = {2409.02097},
   archivePrefix={arXiv},
   primaryClass={cs.CV}
 }
