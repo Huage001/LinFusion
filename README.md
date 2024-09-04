@@ -20,6 +20,10 @@
 
 ![](./assets/picture.png)
 
+## 🔥News
+
+**[2024/09/05]** [Gradio demo](https://huggingface.co/spaces/Huage001/LinFusion-SD-v1.5) for SD-v1.5 is released! Text-to-image, image-to-image, and IP-Adapter are supported currently.
+
 ## Supported Models
 
 1. `Yuanshi/LinFusion-1-5`: For Stable Diffusion 1.5 and its variants. <a href="https://huggingface.co/Yuanshi/LinFusion-1-5"><img src="https://img.shields.io/badge/%F0%9F%A4%97-LinFusion for 1.5-yellow"></a>
