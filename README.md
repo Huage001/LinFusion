@@ -1,7 +1,8 @@
 <div align="center">
 
 # LinFusion
-<a href="https://arxiv.org/"><img src="https://img.shields.io/badge/arXiv-2409.02097-A42C25.svg" alt="arXiv"></a> [[Project Page](https://lv-linfusion.github.io)]
+<a href="https://arxiv.org/"><img src="https://img.shields.io/badge/arXiv-2409.02097-A42C25.svg" alt="arXiv"></a> 
+<a  href="https://lv-linfusion.github.io"><img src="https://img.shields.io/badge/ProjectPage-LinFusion-376ED2#376ED2.svg" alt="Home Page"></a>
 </div>
 
 
@@ -16,7 +17,7 @@
 > [Learning and Vision Lab](http://lv-nus.org/), National University of Singapore
 > <br>
 
-![](https://github.com/Huage001/LinFusion/blob/main/picture.png)
+![](./assets/picture.png)
 
 ## Supported Models
 
