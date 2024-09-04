@@ -7,7 +7,7 @@ from .attention import GeneralizedLinearAttention
 
 model_dict = {
     "runwayml/stable-diffusion-v1-5": "Yuanshi/LinFusion-1-5",
-    "stablediffusionapi/realistic-vision-v51": "Yuanshi/LinFusion-1-5",
+    "SG161222/Realistic_Vision_V4.0_noVAE": "Yuanshi/LinFusion-1-5",
     "Lykon/dreamshaper-8": "Yuanshi/LinFusion-1-5",
 }
 
