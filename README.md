@@ -49,8 +49,8 @@
   + linfusion = LinFusion.construct_for(pipeline)
   
   image = pipeline(
-  	"An astronaut floating in space. Beautiful view of the stars and the universe in the background.",
-  	generator=torch.manual_seed(123)
+      "An astronaut floating in space. Beautiful view of the stars and the universe in the background.",
+      generator=torch.manual_seed(123)
   ).images[0]
   ```
   `LinFusion.construct_for(pipeline)` will return a LinFusion model that matches the pipeline's structure. And this LinFusion model will **automatically mount to** the pipeline's forward function.
