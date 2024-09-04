@@ -3,6 +3,7 @@
 # LinFusion
 <a href="https://arxiv.org/"><img src="https://img.shields.io/badge/arXiv-2409.02097-A42C25.svg" alt="arXiv"></a> 
 <a  href="https://lv-linfusion.github.io"><img src="https://img.shields.io/badge/ProjectPage-LinFusion-376ED2#376ED2.svg" alt="Home Page"></a>
+<a href="https://huggingface.co/spaces/Huage001/LinFusion-SD-v1.5"><img src="https://img.shields.io/static/v1?label=HuggingFace&message=gradio demo&color=yellow"></a>
 </div>
 
 
