@@ -24,6 +24,14 @@
 
 
 ## Quick Start
+* If you have not, install [PyTorch](https://pytorch.org/get-started/locally/) and [diffusers](https://huggingface.co/docs/diffusers/index).
+
+* Clone this repo to your project directory:
+
+  ``` bash
+  git clone https://github.com/Huage001/LinFusion.git
+  ```
+
 * **You only need two lines!**
 
   ```diff
@@ -70,4 +78,3 @@ If you finds this repo is helpful, please consider cite:
   primaryClass={cs.CV}
 }
 ```
-
