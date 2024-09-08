@@ -2,13 +2,6 @@ import torch
 from diffusers.models.attention_processor import Attention
 import torch.nn.functional as F
 
-try:
-    from fla.ops.linear_attn import chunk_linear_attn
-    FLA_ENABLE = True
-except ImportError:
-    print("Warning: FLA is not installed, falling back to default attention.")
-    FLA_ENABLE = False
-
 
 def get_none_linear_projection(query_dim, mid_dim=None):
     # If mid_dim is None, then the mid_dim is the same as query_dim
@@ -74,15 +67,11 @@ class GeneralizedLinearAttention(Attention):
         query = F.elu(query) + 1.0
         key = F.elu(key) + 1.0
 
-        if FLA_ENABLE and False:
-            # TODO: there is a bug in the FLA implementation
-            raise NotImplementedError
-        else:
-            z = query @ key.mean(dim=-2, keepdim=True).transpose(-2, -1) + 1e-4
-            kv = (key.transpose(-2, -1) * (sequence_length**-0.5)) @ (
-                value * (sequence_length**-0.5)
-            )
-            hidden_states = query @ kv / z
+        z = query @ key.mean(dim=-2, keepdim=True).transpose(-2, -1) + 1e-4
+        kv = (key.transpose(-2, -1) * (sequence_length**-0.5)) @ (
+            value * (sequence_length**-0.5)
+        )
+        hidden_states = query @ kv / z
 
         hidden_states = self.batch_to_head_dim(hidden_states)
 
