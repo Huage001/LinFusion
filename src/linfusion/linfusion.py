@@ -75,6 +75,7 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet=None,
         load_pretrained=True,
         pretrained_model_name_or_path=None,
+        pipe_name_path=None
     ) -> "LinFusion":
         """
         Construct a LinFusion object for the given pipeline.
@@ -83,8 +84,8 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet = unet or pipeline.unet
         if load_pretrained:
             # Load from pretrained
-            pipe_name_path = pipeline._internal_dict._name_or_path
             if not pretrained_model_name_or_path:
+                pipe_name_path = pipe_name_path or pipeline._internal_dict._name_or_path
                 pretrained_model_name_or_path = model_dict.get(pipe_name_path, None)
                 if pretrained_model_name_or_path:
                     print(
