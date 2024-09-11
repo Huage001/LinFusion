@@ -31,11 +31,9 @@ def get_laion_dataset(
     resolution=512,
     path="bhargavsdesai/laion_improved_aesthetics_6.5plus_with_images",
 ):
-    dataset = load_dataset(
-        path, split="train", cache_dir="/local_home/liusonghua/dataset/"
-    )
+    dataset = load_dataset(path, split="train")
     with open(
-        "/home/liusonghua/3d_personalization/data/laion_improved_aesthetics_6.5plus_with_images_blip_captions.json"
+        "./assets/laion_improved_aesthetics_6.5plus_with_images_blip_captions.json"
     ) as read_file:
         all_captions = json.load(read_file)
 
@@ -337,7 +335,9 @@ def main():
                 elif noise_scheduler.config.prediction_type == "v_prediction":
                     target = noise_scheduler.get_velocity(latents, noise, timesteps)
                 else:
-                    raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+                    raise ValueError(
+                        f"Unknown prediction type {noise_scheduler.config.prediction_type}"
+                    )
 
                 loss_noise = F.mse_loss(
                     noise_pred.float(), target.float(), reduction="mean"
@@ -399,10 +399,8 @@ def main():
             global_step += 1
 
             if global_step % args.save_steps == 0 and accelerator.is_main_process:
-                torch.save(
-                    accelerator.unwrap_model(linfusion_model).state_dict(),
-                    os.path.join(args.output_dir, f"checkpoint-{global_step}.pt"),
-                )
+                # Save model checkpoint
+                pass
 
             begin = time.perf_counter()
 
