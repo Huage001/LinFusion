@@ -96,14 +96,14 @@ class LinFusion(ModelMixin, ConfigMixin):
                     )
             linfusion = (
                 LinFusion.from_pretrained(pretrained_model_name_or_path)
-                .to(pipeline.device)
-                .to(pipeline.dtype)
+                .to(unet.device)
+                .to(unet.dtype)
             )
         else:
             # Create from scratch without pretrained parameters
-            default_config = LinFusion.get_default_config(pipeline)
+            default_config = LinFusion.get_default_config(unet=unet)
             linfusion = (
-                LinFusion(**default_config).to(pipeline.device).to(pipeline.dtype)
+                LinFusion(**default_config).to(unet.device).to(unet.dtype)
             )
         linfusion.mount_to(unet)
         return linfusion
