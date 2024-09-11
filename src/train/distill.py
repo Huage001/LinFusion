@@ -332,8 +332,15 @@ def main():
                     encoder_hidden_states=encoder_hidden_states,
                 ).sample
 
+                if noise_scheduler.config.prediction_type == "epsilon":
+                    target = noise
+                elif noise_scheduler.config.prediction_type == "v_prediction":
+                    target = noise_scheduler.get_velocity(latents, noise, timesteps)
+                else:
+                    raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+
                 loss_noise = F.mse_loss(
-                    noise_pred.float(), noise.float(), reduction="mean"
+                    noise_pred.float(), target.float(), reduction="mean"
                 )
                 loss_kd = F.mse_loss(
                     noise_pred.float(), noise_pred_teacher.float(), reduction="mean"
