@@ -7,7 +7,7 @@ from .attention import GeneralizedLinearAttention
 
 model_dict = {
     "runwayml/stable-diffusion-v1-5": "Yuanshi/LinFusion-1-5",
-    "stablediffusionapi/realistic-vision-v51": "Yuanshi/LinFusion-1-5",
+    "SG161222/Realistic_Vision_V4.0_noVAE": "Yuanshi/LinFusion-1-5",
     "Lykon/dreamshaper-8": "Yuanshi/LinFusion-1-5",
 }
 
@@ -75,6 +75,7 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet=None,
         load_pretrained=True,
         pretrained_model_name_or_path=None,
+        pipe_name_path=None
     ) -> "LinFusion":
         """
         Construct a LinFusion object for the given pipeline.
@@ -83,8 +84,8 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet = unet or pipeline.unet
         if load_pretrained:
             # Load from pretrained
-            pipe_name_path = pipeline._internal_dict._name_or_path
             if not pretrained_model_name_or_path:
+                pipe_name_path = pipe_name_path or pipeline._internal_dict._name_or_path
                 pretrained_model_name_or_path = model_dict.get(pipe_name_path, None)
                 if pretrained_model_name_or_path:
                     print(
