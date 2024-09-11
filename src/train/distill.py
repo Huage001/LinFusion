@@ -400,7 +400,9 @@ def main():
 
             if global_step % args.save_steps == 0 and accelerator.is_main_process:
                 # Save model checkpoint
-                pass
+                linfusion_model.save_pretrained(
+                    args.output_dir, subfolder=f"linfusion-{global_step}.pt", push_to_hub=False
+                )
 
             begin = time.perf_counter()
 
