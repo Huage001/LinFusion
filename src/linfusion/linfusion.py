@@ -75,6 +75,7 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet=None,
         load_pretrained=True,
         pretrained_model_name_or_path=None,
+        pipe_name_path=None
     ) -> "LinFusion":
         """
         Construct a LinFusion object for the given pipeline.
@@ -83,8 +84,8 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet = unet or pipeline.unet
         if load_pretrained:
             # Load from pretrained
-            pipe_name_path = pipeline._internal_dict._name_or_path
             if not pretrained_model_name_or_path:
+                pipe_name_path = pipe_name_path or pipeline._internal_dict._name_or_path
                 pretrained_model_name_or_path = model_dict.get(pipe_name_path, None)
                 if pretrained_model_name_or_path:
                     print(
@@ -96,14 +97,14 @@ class LinFusion(ModelMixin, ConfigMixin):
                     )
             linfusion = (
                 LinFusion.from_pretrained(pretrained_model_name_or_path)
-                .to(pipeline.device)
-                .to(pipeline.dtype)
+                .to(unet.device)
+                .to(unet.dtype)
             )
         else:
             # Create from scratch without pretrained parameters
-            default_config = LinFusion.get_default_config(pipeline)
+            default_config = LinFusion.get_default_config(unet=unet)
             linfusion = (
-                LinFusion(**default_config).to(pipeline.device).to(pipeline.dtype)
+                LinFusion(**default_config).to(unet.device).to(unet.dtype)
             )
         linfusion.mount_to(unet)
         return linfusion
