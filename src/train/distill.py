@@ -16,6 +16,13 @@ from accelerate import Accelerator
 from accelerate.utils import ProjectConfiguration
 from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
 from transformers import CLIPTextModel, CLIPTokenizer
+import functools
+
+from ..linfusion import LinFusion
+
+
+def get_submodule(model, module_name):
+    return functools.reduce(getattr, module_name.split("."), model)
 
 
 # Dataset
@@ -67,86 +74,6 @@ def get_laion_dataset(
     dataset.set_transform(transform)
 
     return dataset
-
-
-all_attn_outputs = []
-all_attn_outputs_teacher = []
-
-
-def inj_forward_crossattention(
-    self, hidden_states, encoder_hidden_states=None, attention_mask=None
-):
-    if encoder_hidden_states is None:
-        encoder_hidden_states = hidden_states
-
-    batch_size, sequence_length, _ = hidden_states.shape
-
-    query = self.to_q(hidden_states + self.to_q_(hidden_states))
-    key = self.to_k(encoder_hidden_states + self.to_k_(encoder_hidden_states))
-    value = self.to_v(encoder_hidden_states)
-
-    dim = query.shape[-1]
-
-    query = self.head_to_batch_dim(query)
-    key = self.head_to_batch_dim(key)
-    value = self.head_to_batch_dim(value)
-
-    query = F.elu(query) + 1.0
-    key = F.elu(key) + 1.0
-
-    z = query @ key.mean(dim=-2, keepdim=True).transpose(-2, -1) + 1e-4
-    kv = (key.transpose(-2, -1) * (sequence_length**-0.5)) @ (
-        value * (sequence_length**-0.5)
-    )
-    hidden_states = query @ kv / z
-
-    hidden_states = self.batch_to_head_dim(hidden_states)
-
-    # linear proj
-    hidden_states = self.to_out[0](hidden_states)
-    # dropout
-    hidden_states = self.to_out[1](hidden_states)
-
-    all_attn_outputs.append(hidden_states)
-
-    return hidden_states
-
-
-def inj_forward_crossattention_teacher(
-    self, hidden_states, encoder_hidden_states=None, attention_mask=None
-):
-    if encoder_hidden_states is None:
-        encoder_hidden_states = hidden_states
-
-    batch_size, sequence_length, _ = hidden_states.shape
-
-    query = self.to_q(hidden_states)
-    key = self.to_k(encoder_hidden_states)
-    value = self.to_v(encoder_hidden_states)
-
-    dim = query.shape[-1]
-
-    query = self.head_to_batch_dim(query)
-    key = self.head_to_batch_dim(key)
-    value = self.head_to_batch_dim(value)
-
-    attention_scores = torch.matmul(query, key.transpose(-1, -2))
-    attention_scores = attention_scores * self.scale
-
-    attention_probs = attention_scores.softmax(dim=-1)
-
-    hidden_states = torch.matmul(attention_probs, value)
-
-    hidden_states = self.batch_to_head_dim(hidden_states)
-
-    # linear proj
-    hidden_states = self.to_out[0](hidden_states)
-    # dropout
-    hidden_states = self.to_out[1](hidden_states)
-
-    all_attn_outputs_teacher.append(hidden_states)
-
-    return hidden_states
 
 
 def parse_args():
@@ -306,61 +233,28 @@ def main():
     vae.requires_grad_(False)
     text_encoder.requires_grad_(False)
 
-    def inject_wrapper_forward_attn(self):
-        def _forward(*args, **kwargs):
-            return inj_forward_crossattention(self, *args, **kwargs)
+    all_attn_outputs = []
+    all_attn_outputs_teacher = []
 
-        return _forward
+    # to construct a LinFusion model
+    linfusion_model = LinFusion.construct_for(
+        unet=unet,
+        load_pretrained=args.pretrained_attn_path is not None,
+        pretrained_model_name_or_path=args.pretrained_attn_path,
+    )
 
-    self_attn_modules = []
-    for _name, _module in unet.named_modules():
-        if _module.__class__.__name__ == "Attention":
-            if "attn1" not in _name:
-                continue
-            mid_dim = _module.to_q.weight.shape[0]
-            linear_1 = nn.Linear(mid_dim, mid_dim)
-            linear_1.weight.data = torch.zeros_like(linear_1.weight.data)
-            linear_1.bias.data = torch.zeros_like(linear_1.bias.data)
-            _module.add_module(
-                "to_q_",
-                nn.Sequential(
-                    nn.Linear(mid_dim, mid_dim),
-                    nn.LayerNorm(mid_dim),
-                    nn.LeakyReLU(),
-                    linear_1,
-                ),
-            )
-            linear_2 = nn.Linear(mid_dim, mid_dim)
-            linear_2.weight.data = torch.zeros_like(linear_2.weight.data)
-            linear_2.bias.data = torch.zeros_like(linear_2.bias.data)
-            _module.add_module(
-                "to_k_",
-                nn.Sequential(
-                    nn.Linear(mid_dim, mid_dim),
-                    nn.LayerNorm(mid_dim),
-                    nn.LeakyReLU(),
-                    linear_2,
-                ),
-            )
-            _module.forward = inject_wrapper_forward_attn(_module)
-            self_attn_modules.append(_module)
-    self_attn_modules = torch.nn.ModuleList(self_attn_modules)
-    if args.pretrained_attn_path is not None:
-        self_attn_modules.load_state_dict(
-            torch.load(args.pretrained_attn_path, map_location="cpu")
-        )
+    def student_forward_hook(module, input, output):
+        all_attn_outputs.append(output)
 
-    def inject_wrapper_forward_attn_teacher(self):
-        def _forward(*args, **kwargs):
-            return inj_forward_crossattention_teacher(self, *args, **kwargs)
+    def teacher_forward_hook(module, input, output):
+        all_attn_outputs_teacher.append(output)
 
-        return _forward
-
-    for _name, _module in unet_teacher.named_modules():
-        if _module.__class__.__name__ == "Attention":
-            if "attn1" not in _name:
-                continue
-            _module.forward = inject_wrapper_forward_attn_teacher(_module)
+    for sub_module in linfusion_model.modules_list:
+        sub_module_name = sub_module["module_name"]
+        student_module = get_submodule(unet, sub_module_name)
+        teacher_module = get_submodule(unet_teacher, sub_module_name)
+        student_module.register_forward_hook(student_forward_hook)
+        teacher_module.register_forward_hook(teacher_forward_hook)
 
     weight_dtype = torch.float32
     if accelerator.mixed_precision == "fp16":
@@ -370,11 +264,11 @@ def main():
     unet_teacher.to(accelerator.device, dtype=weight_dtype)
     vae.to(accelerator.device, dtype=weight_dtype)
     text_encoder.to(accelerator.device, dtype=weight_dtype)
-    self_attn_modules.requires_grad_(True)
+    linfusion_model.requires_grad_(True)
 
     # optimizer
     optimizer = torch.optim.AdamW(
-        self_attn_modules.parameters(),
+        linfusion_model.parameters(),
         lr=args.learning_rate,
         weight_decay=args.weight_decay,
     )
@@ -389,8 +283,8 @@ def main():
     )
 
     # Prepare everything with our `accelerator`.
-    self_attn_modules, unet, optimizer, train_dataloader = accelerator.prepare(
-        self_attn_modules, unet, optimizer, train_dataloader
+    linfusion_model, unet, optimizer, train_dataloader = accelerator.prepare(
+        linfusion_model, unet, optimizer, train_dataloader
     )
 
     global_step = 0
@@ -398,7 +292,7 @@ def main():
         begin = time.perf_counter()
         for step, batch in enumerate(train_dataloader):
             load_data_time = time.perf_counter() - begin
-            with accelerator.accumulate(self_attn_modules):
+            with accelerator.accumulate(linfusion_model):
                 # Convert images to latent space
                 with torch.no_grad():
                     latents = vae.encode(
@@ -499,7 +393,7 @@ def main():
 
             if global_step % args.save_steps == 0 and accelerator.is_main_process:
                 torch.save(
-                    accelerator.unwrap_model(self_attn_modules).state_dict(),
+                    accelerator.unwrap_model(linfusion_model).state_dict(),
                     os.path.join(args.output_dir, f"checkpoint-{global_step}.pt"),
                 )
 
