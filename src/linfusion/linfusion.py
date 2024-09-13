@@ -9,6 +9,7 @@ model_dict = {
     "runwayml/stable-diffusion-v1-5": "Yuanshi/LinFusion-1-5",
     "SG161222/Realistic_Vision_V4.0_noVAE": "Yuanshi/LinFusion-1-5",
     "Lykon/dreamshaper-8": "Yuanshi/LinFusion-1-5",
+    "stabilityai/stable-diffusion-2-1": "Yuanshi/LinFusion-2-1",
 }
 
 
