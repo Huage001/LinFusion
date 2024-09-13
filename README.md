@@ -22,7 +22,9 @@
 
 ## 🔥News
 
-**[2024/09/08]** We release codes for **16K** image generation [here](https://github.com/Huage001/LinFusion/blob/main/examples/ultra_text2image_w_sdedit.ipynb)!
+**[2024/09/13]** We release training codes for Stable Diffusion v-1.5, v-2.1, and their variants [here](https://github.com/Huage001/LinFusion/blob/main/src/train/distill.py) 
+
+**[2024/09/08]** We release codes for **16K** image generation [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/ultra_text2image_w_sdedit.ipynb)!
 
 **[2024/09/05]** [Gradio demo](https://huggingface.co/spaces/Huage001/LinFusion-SD-v1.5) for SD-v1.5 is released! Text-to-image, image-to-image, and IP-Adapter are supported currently.
 
@@ -63,18 +65,37 @@
   ```
   `LinFusion.construct_for(pipeline)` will return a LinFusion model that matches the pipeline's structure. And this LinFusion model will **automatically mount to** the pipeline's forward function.
 
-* `examples/basic_usage.ipynb` shows a basic text-to-image example.
+* `examples/inference/basic_usage.ipynb` shows a basic text-to-image example.
 
 ## Ultrahigh-Resolution Generation
 
-* From the perspective of efficiency, our method supports high-resolution generation such as 16K images. Nevertheless, directly applying diffusion models trained on low resolutions for higher-resolution generation can result in content distortion and duplication. To tackle this challenge, we apply techniques in [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image). **The basic idea is to generate a low-resolution result at first, based on which we gradually upscale the image. Please refer to `examples/ultra_text2image_w_sdedit.ipynb` for an example.** Note that 16K generation is only currently available for 80G GPUs. We will try to relax this constraint by implementing tiling strategies.
+* From the perspective of efficiency, our method supports high-resolution generation such as 16K images. Nevertheless, directly applying diffusion models trained on low resolutions for higher-resolution generation can result in content distortion and duplication. To tackle this challenge, we apply techniques in [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image). **The basic idea is to generate a low-resolution result at first, based on which we gradually upscale the image. Please refer to `examples/inference/ultra_text2image_w_sdedit.ipynb` for an example.** Note that 16K generation is only currently available for 80G GPUs. We will try to relax this constraint by implementing tiling strategies.
 * We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension!
 
+## Training
+
+* Before training, make sure you have the packages shown in `requirements.txt` installed:
+
+  ```bash
+  pip install -r requirements.txt
+  ```
+
+* Training codes for Stable Diffusion v-1.5, v-2.1, and their variants are released in `src/train/distill.py`. We present an exampler running script in `examples/train/distill.sh`. You can run it on a 8-GPU machine via:
+
+  ```bash
+  bash ./examples/training/distill.sh
+  ```
+
+  The codes will download `bhargavsdesai/laion_improved_aesthetics_6.5plus_with_images` [dataset](https://huggingface.co/datasets/bhargavsdesai/laion_improved_aesthetics_6.5plus_with_images) automatically to `~/.cache` directory by default if there is not, which contains 169k images and requires ~75 GB disk space.
+
+  We use fp16 precision and 512 resolution for Stable Diffusion v-1.5 and bf16 precision and 768 resolution for Stable Diffusion v-2.1.
+
 ## ToDo
+
 - [x] Stable Diffusion 1.5 support.
 - [ ] Stable Diffusion 2.1 support. 
 - [ ] Stable Diffusion XL support.
-- [ ] Release training code for LinFusion.
+- [x] Release training code for LinFusion.
 - [ ] Release evaluation code for LinFusion.
 
 ## Citation

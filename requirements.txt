@@ -1,0 +1,7 @@
+torch
+diffusers
+accelerate
+opencv-python
+datasets
+Pillow
+transformers
