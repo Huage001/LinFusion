@@ -84,7 +84,7 @@ def parse_args():
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
-        "--pretrained_attn_path",
+        "--pretrained_linfusion_path",
         type=str,
         default=None,
         help="Path to pretrained ip adapter model. If not specified weights are initialized randomly.",
@@ -135,8 +135,14 @@ def parse_args():
     parser.add_argument(
         "--train_batch_size",
         type=int,
-        default=8,
+        default=6,
         help="Batch size (per device) for the training dataloader.",
+    )
+    parser.add_argument(
+        "--gradient_accumulation_steps",
+        type=int,
+        default=2,
+        help="Gradient accumulation steps. Total bs=train_batch_size * gradient_accumulation_steps * num_gpus",
     )
     parser.add_argument(
         "--dataloader_num_workers",
@@ -199,7 +205,7 @@ def main():
         mixed_precision=args.mixed_precision,
         log_with=args.report_to,
         project_config=accelerator_project_config,
-        gradient_accumulation_steps=2,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
     )
 
     if accelerator.is_main_process:
@@ -237,8 +243,8 @@ def main():
     # to construct a LinFusion model
     linfusion_model = LinFusion.construct_for(
         unet=unet,
-        load_pretrained=args.pretrained_attn_path is not None,
-        pretrained_model_name_or_path=args.pretrained_attn_path,
+        load_pretrained=args.pretrained_linfusion_path is not None,
+        pretrained_model_name_or_path=args.pretrained_linfusion_path,
     )
 
     def student_forward_hook(module, input, output):
@@ -401,7 +407,7 @@ def main():
             if global_step % args.save_steps == 0 and accelerator.is_main_process:
                 # Save model checkpoint
                 linfusion_model.save_pretrained(
-                    args.output_dir, subfolder=f"linfusion-{global_step}.pt", push_to_hub=False
+                    os.path.join(args.output_dir, f"linfusion-{global_step}"), push_to_hub=False
                 )
 
             begin = time.perf_counter()
