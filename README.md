@@ -93,8 +93,8 @@
 ## ToDo
 
 - [x] Stable Diffusion 1.5 support.
-- [ ] Stable Diffusion 2.1 support. 
-- [ ] Stable Diffusion XL support.
+- [x] Stable Diffusion 2.1 support. 
+- [x] Stable Diffusion XL support.
 - [x] Release training code for LinFusion.
 - [ ] Release evaluation code for LinFusion.
 
