@@ -9,6 +9,8 @@ model_dict = {
     "runwayml/stable-diffusion-v1-5": "Yuanshi/LinFusion-1-5",
     "SG161222/Realistic_Vision_V4.0_noVAE": "Yuanshi/LinFusion-1-5",
     "Lykon/dreamshaper-8": "Yuanshi/LinFusion-1-5",
+    "stabilityai/stable-diffusion-2-1": "Yuanshi/LinFusion-2-1",
+    "stabilityai/stable-diffusion-xl-base-1.0": "Yuanshi/LinFusion-XL",
 }
 
 
@@ -75,7 +77,7 @@ class LinFusion(ModelMixin, ConfigMixin):
         unet=None,
         load_pretrained=True,
         pretrained_model_name_or_path=None,
-        pipe_name_path=None
+        pipe_name_path=None,
     ) -> "LinFusion":
         """
         Construct a LinFusion object for the given pipeline.
@@ -103,15 +105,16 @@ class LinFusion(ModelMixin, ConfigMixin):
         else:
             # Create from scratch without pretrained parameters
             default_config = LinFusion.get_default_config(unet=unet)
-            linfusion = (
-                LinFusion(**default_config).to(unet.device).to(unet.dtype)
-            )
-        linfusion.mount_to(unet)
+            linfusion = LinFusion(**default_config).to(unet.device).to(unet.dtype)
+        linfusion.mount_to(unet=unet)
         return linfusion
 
-    def mount_to(self, unet) -> None:
+    def mount_to(self, pipeline=None, unet=None) -> None:
         """
         Mounts the modules in the `modules_dict` to the given `pipeline`.
         """
+        assert unet is not None or pipeline.unet is not None
+        unet = unet or pipeline.unet
         for module_name, module in self.modules_dict.items():
             replace_submodule(unet, module_name, module)
+        self.to(unet.device).to(unet.dtype)
