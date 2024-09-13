@@ -1,5 +1,5 @@
 accelerate launch --num_processes 8 --multi_gpu --mixed_precision "bf16" --main_process_port 29500 \
-  distill.py \
+  -m src.train.distill \
   --pretrained_model_name_or_path="stabilityai/stable-diffusion-2-1" \
   --mixed_precision="bf16" \
   --resolution=768 \
