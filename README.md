@@ -100,7 +100,7 @@
 
 ## Citation
 
-If you finds this repo is helpful, please consider cite:
+If you finds this repo is helpful, please consider citing:
 
 ```bib
 @article{liu2024linfusion,
