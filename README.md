@@ -22,7 +22,9 @@
 
 ## 🔥News
 
-**[2024/09/13]** We release training codes for Stable Diffusion v-1.5, v-2.1, and their variants [here](https://github.com/Huage001/LinFusion/blob/main/src/train/distill.py) 
+**[2024/09/13]** We release LinFusion models for Stable Diffusion v-2.1 and Stable Diffusion XL!
+
+**[2024/09/13]** We release training codes for Stable Diffusion v-1.5, v-2.1, and their variants [here](https://github.com/Huage001/LinFusion/blob/main/src/train/distill.py)!
 
 **[2024/09/08]** We release codes for **16K** image generation [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/ultra_text2image_w_sdedit.ipynb)!
 
@@ -30,7 +32,9 @@
 
 ## Supported Models
 
-1. `Yuanshi/LinFusion-1-5`: For Stable Diffusion 1.5 and its variants. <a href="https://huggingface.co/Yuanshi/LinFusion-1-5"><img src="https://img.shields.io/badge/%F0%9F%A4%97-LinFusion for 1.5-yellow"></a>
+1. `Yuanshi/LinFusion-1-5`: For Stable Diffusion v-1.5 and its variants. <a href="https://huggingface.co/Yuanshi/LinFusion-1-5"><img src="https://img.shields.io/badge/%F0%9F%A4%97-LinFusion for SD v1.5-yellow"></a>
+1. `Yuanshi/LinFusion-2-1`: For Stable Diffusion v-2.1 and its variants. <a href="https://huggingface.co/Yuanshi/LinFusion-2-1"><img src="https://img.shields.io/badge/%F0%9F%A4%97-LinFusion for SD v2.1-yellow"></a>
+1. `Yuanshi/LinFusion-XL`: For Stable Diffusion XL and its variants. <a href="https://huggingface.co/Yuanshi/LinFusion-XL"><img src="https://img.shields.io/badge/%F0%9F%A4%97-LinFusion for SD XL-yellow"></a>
 
 
 ## Quick Start
