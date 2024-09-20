@@ -1,8 +1,9 @@
 import os
+import copy
 import numpy as np
-import cv2
 import io
 from datasets import load_dataset
+from torchvision import transforms
 import argparse
 from pathlib import Path
 import json
@@ -14,8 +15,7 @@ import torch.nn.functional as F
 from PIL import Image
 from accelerate import Accelerator
 from accelerate.utils import ProjectConfiguration
-from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
-from transformers import CLIPTextModel, CLIPTokenizer
+from diffusers import StableDiffusionXLPipeline, DDPMScheduler
 import functools
 
 from ..linfusion import LinFusion
@@ -28,7 +28,8 @@ def get_submodule(model, module_name):
 # Dataset
 def get_laion_dataset(
     tokenizer,
-    resolution=512,
+    tokenizer_2,
+    resolution=1024,
     path="bhargavsdesai/laion_improved_aesthetics_6.5plus_with_images",
 ):
     dataset = load_dataset(path, split="train")
@@ -46,16 +47,26 @@ def get_laion_dataset(
             max_length=tokenizer.model_max_length,
             return_tensors="pt",
         ).input_ids
+        example["input_ids_2"] = tokenizer_2(
+            captions,
+            padding="max_length",
+            truncation=True,
+            max_length=tokenizer.model_max_length,
+            return_tensors="pt",
+        ).input_ids
         return example
 
     dataset = dataset.map(get_blip_caption, with_indices=True, batched=True)
 
-    def process(image):
-        img = np.array(image)
-        img = cv2.resize(img, (resolution, resolution), interpolation=cv2.INTER_CUBIC)
-        img = np.array(img).astype(np.float32)
-        img = img / 127.5 - 1.0
-        return torch.from_numpy(img).permute(2, 0, 1)
+    process = transforms.Compose(
+        [
+            transforms.Resize(
+                resolution, interpolation=transforms.InterpolationMode.BILINEAR
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5]),
+        ]
+    )
 
     def transform(example):
         batch = {}
@@ -63,9 +74,41 @@ def get_laion_dataset(
             Image.open(io.BytesIO(item["bytes"])).convert("RGB")
             for item in example["image"]
         ]
-        batch["image"] = torch.stack([process(image) for image in images], dim=0)
+        batch["original_size"] = torch.stack(
+            [torch.tensor([image.size[1], image.size[0]]) for image in images], dim=0
+        )
+        batch["target_size"] = torch.stack(
+            [torch.tensor([resolution, resolution])] * len(images), dim=0
+        )
+        images = [process(image) for image in images]
+        batch["crop_coords_top_left"] = torch.stack(
+            [
+                torch.tensor(
+                    [
+                        (image.shape[1] - resolution) // 2,
+                        (image.shape[2] - resolution) // 2,
+                    ]
+                )
+                for image in images
+            ],
+            dim=0,
+        )
+        batch["image"] = torch.stack(
+            [
+                image[
+                    :,
+                    coord[0] : coord[0] + resolution,
+                    coord[1] : coord[1] + resolution,
+                ]
+                for image, coord in zip(images, batch["crop_coords_top_left"])
+            ],
+            dim=0,
+        )
         batch["text_input_ids"] = torch.from_numpy(
             np.array(example["input_ids"])
+        ).long()
+        batch["text_input_ids_2"] = torch.from_numpy(
+            np.array(example["input_ids_2"])
         ).long()
         return batch
 
@@ -104,7 +147,7 @@ def parse_args():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="linear_attn_tune_attn",
+        default="distill_sdxl",
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
@@ -119,7 +162,7 @@ def parse_args():
     parser.add_argument(
         "--resolution",
         type=int,
-        default=512,
+        default=1024,
         help=("The resolution for input images"),
     )
     parser.add_argument(
@@ -135,19 +178,19 @@ def parse_args():
     parser.add_argument(
         "--train_batch_size",
         type=int,
-        default=6,
+        default=1,
         help="Batch size (per device) for the training dataloader.",
     )
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
-        default=2,
+        default=8,
         help="Gradient accumulation steps. Total bs=train_batch_size * gradient_accumulation_steps * num_gpus",
     )
     parser.add_argument(
         "--dataloader_num_workers",
         type=int,
-        default=8,
+        default=1,
         help=(
             "Number of subprocesses to use for data loading. 0 means that the data will be loaded in the main process."
         ),
@@ -219,29 +262,25 @@ def main():
             os.makedirs(args.output_dir, exist_ok=True)
 
     # Load scheduler, tokenizer and models.
+    pipeline = StableDiffusionXLPipeline.from_pretrained(
+        args.pretrained_model_name_or_path
+    )
     noise_scheduler = DDPMScheduler.from_pretrained(
         args.pretrained_model_name_or_path, subfolder="scheduler"
     )
-    tokenizer = CLIPTokenizer.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="tokenizer"
-    )
-    text_encoder = CLIPTextModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="text_encoder"
-    )
-    vae = AutoencoderKL.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="vae"
-    )
-    unet = UNet2DConditionModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="unet"
-    )
-    unet_teacher = UNet2DConditionModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="unet"
-    )
+    tokenizer = pipeline.tokenizer
+    text_encoder = pipeline.text_encoder
+    tokenizer_2 = pipeline.tokenizer_2
+    text_encoder_2 = pipeline.text_encoder_2
+    vae = pipeline.vae
+    unet = pipeline.unet
+    unet_teacher = copy.deepcopy(unet)
     # freeze parameters of models to save more memory
     unet.requires_grad_(False)
     unet_teacher.requires_grad_(False)
     vae.requires_grad_(False)
     text_encoder.requires_grad_(False)
+    text_encoder_2.requires_grad_(False)
 
     all_attn_outputs = []
     all_attn_outputs_teacher = []
@@ -282,6 +321,7 @@ def main():
     unet_teacher.to(accelerator.device, dtype=weight_dtype)
     vae.to(accelerator.device, dtype=weight_dtype)
     text_encoder.to(accelerator.device, dtype=weight_dtype)
+    text_encoder_2.to(accelerator.device, dtype=weight_dtype)
     linfusion_model.requires_grad_(True)
 
     # optimizer
@@ -292,7 +332,9 @@ def main():
     )
 
     # dataloader
-    train_dataset = get_laion_dataset(tokenizer=tokenizer, resolution=args.resolution)
+    train_dataset = get_laion_dataset(
+        tokenizer=tokenizer, tokenizer_2=tokenizer_2, resolution=args.resolution
+    )
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
         shuffle=True,
@@ -314,40 +356,65 @@ def main():
                 # Convert images to latent space
                 with torch.no_grad():
                     latents = vae.encode(
-                        batch["image"].to(accelerator.device, dtype=weight_dtype)
+                        batch["image"].to(accelerator.device, dtype=torch.float32)
                     ).latent_dist.sample()
                     latents = latents * vae.config.scaling_factor
+                    latents = latents.to(accelerator.device, dtype=weight_dtype)
 
-                # Sample noise that we'll add to the latents
-                noise = torch.randn_like(latents)
-                bsz = latents.shape[0]
-                # Sample a random timestep for each image
-                timesteps = torch.randint(
-                    0,
-                    noise_scheduler.num_train_timesteps,
-                    (bsz,),
-                    device=latents.device,
-                )
-                timesteps = timesteps.long()
+                    # Sample noise that we'll add to the latents
+                    noise = torch.randn_like(latents)
+                    bsz = latents.shape[0]
+                    # Sample a random timestep for each image
+                    timesteps = torch.randint(
+                        0,
+                        noise_scheduler.num_train_timesteps,
+                        (bsz,),
+                        device=latents.device,
+                    )
+                    timesteps = timesteps.long()
 
-                # Add noise to the latents according to the noise magnitude at each timestep
-                # (this is the forward diffusion process)
-                noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+                    # Add noise to the latents according to the noise magnitude at each timestep
+                    # (this is the forward diffusion process)
+                    noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+                    
+                    encoder_output = text_encoder(
+                        batch["text_input_ids"].to(accelerator.device),
+                        output_hidden_states=True,
+                    )
+                    text_embeds = encoder_output.hidden_states[-2]
+                    encoder_output_2 = text_encoder_2(
+                        batch["text_input_ids_2"].to(accelerator.device),
+                        output_hidden_states=True,
+                    )
+                    pooled_text_embeds = encoder_output_2[0]
+                    text_embeds_2 = encoder_output_2.hidden_states[-2]
+                    text_embeds = torch.concat([text_embeds, text_embeds_2], dim=-1)
 
-                with torch.no_grad():
-                    encoder_hidden_states = text_encoder(
-                        batch["text_input_ids"].to(accelerator.device)
-                    )[0]
+                    add_time_ids = torch.cat(
+                        [
+                            batch["original_size"],
+                            batch["crop_coords_top_left"],
+                            batch["target_size"],
+                        ],
+                        dim=1,
+                    ).to(accelerator.device, dtype=weight_dtype)
+                    unet_added_cond_kwargs = {
+                        "text_embeds": pooled_text_embeds,
+                        "time_ids": add_time_ids,
+                    }
+
                     noise_pred_teacher = unet_teacher(
                         noisy_latents,
                         timesteps,
-                        encoder_hidden_states=encoder_hidden_states,
+                        encoder_hidden_states=text_embeds,
+                        added_cond_kwargs=unet_added_cond_kwargs,
                     ).sample
 
                 noise_pred = unet(
                     noisy_latents,
                     timesteps,
-                    encoder_hidden_states=encoder_hidden_states,
+                    encoder_hidden_states=text_embeds,
+                    added_cond_kwargs=unet_added_cond_kwargs,
                 ).sample
 
                 if noise_scheduler.config.prediction_type == "epsilon":
@@ -360,7 +427,7 @@ def main():
                     )
 
                 loss_noise = F.mse_loss(
-                    noise_pred.float(), target.float(), reduction="mean"
+                    noise_pred.float(), noise.float(), reduction="mean"
                 )
                 loss_kd = F.mse_loss(
                     noise_pred.float(), noise_pred_teacher.float(), reduction="mean"
