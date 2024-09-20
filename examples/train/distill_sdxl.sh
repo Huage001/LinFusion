@@ -1,13 +1,13 @@
-accelerate launch --num_processes 8 --multi_gpu --mixed_precision "bf16" --main_process_port 29500 \
+accelerate launch --num_processes 8 --multi_gpu --mixed_precision "fp16" --main_process_port 29500 \
   -m src.train.distil_sdxl \
   --pretrained_model_name_or_path="stabilityai/stable-diffusion-xl-base-1.0" \
-  --mixed_precision="bf16" \
-  --resolution=768 \
-  --train_batch_size=6 \
-  --gradient_accumulation_steps=2 \
+  --mixed_precision="fp16" \
+  --resolution=1024 \
+  --train_batch_size=2 \
+  --gradient_accumulation_steps=4 \
   --dataloader_num_workers=6 \
   --learning_rate=1e-04 \
   --weight_decay=0. \
-  --output_dir="ckpt/linfusion_sd2p1" \
+  --output_dir="ckpt/linfusion_sdxl" \
   --save_steps=10000 \
   --mid_dim_scale=16
