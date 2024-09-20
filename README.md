@@ -22,6 +22,10 @@
 
 ## 🔥News
 
+**[2024/09/20]** We release **a more advanced pipeline for ultra-high-resolution image generation using SD-XL**! It can be used for [text-to-image generation](https://github.com/Huage001/LinFusion/blob/main/examples/inference/ultra_text2image_sdxl.ipynb) and [image super-resolution](https://github.com/Huage001/LinFusion/blob/main/examples/inference/superres_sdxl.ipynb)!
+
+**[2024/09/20]** We release training codes for Stable Diffusion XL [here](https://github.com/Huage001/LinFusion/blob/main/src/train/distill_xl.py)!
+
 **[2024/09/13]** We release LinFusion models for Stable Diffusion v-2.1 and Stable Diffusion XL!
 
 **[2024/09/13]** We release training codes for Stable Diffusion v-1.5, v-2.1, and their variants [here](https://github.com/Huage001/LinFusion/blob/main/src/train/distill.py)!
@@ -73,7 +77,20 @@
 
 ## Ultrahigh-Resolution Generation
 
-* From the perspective of efficiency, our method supports high-resolution generation such as 16K images. Nevertheless, directly applying diffusion models trained on low resolutions for higher-resolution generation can result in content distortion and duplication. To tackle this challenge, we apply techniques in [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image). **The basic idea is to generate a low-resolution result at first, based on which we gradually upscale the image. Please refer to `examples/inference/ultra_text2image_w_sdedit.ipynb` for an example.** Note that 16K generation is only currently available for 80G GPUs. We will try to relax this constraint by implementing tiling strategies.
+From the perspective of efficiency, our method supports high-resolution generation such as 16K images. Nevertheless, directly applying diffusion models trained on low resolutions for higher-resolution generation can result in content distortion and duplication. To tackle this challenge, we apply following techniques:
+
+* [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image). **The basic idea is to generate a low-resolution result at first, based on which we gradually upscale the image. **
+
+  **Please refer to `examples/inference/ultra_text2image_w_sdedit.ipynb` for an example.** Note that 16K generation is only currently available for 80G GPUs. We will try to relax this constraint by implementing tiling strategies.
+
+* [DemoFusion](https://github.com/PRIS-CV/DemoFusion). It also generates high-resolution images from low-resolution results. Latents of the low-resolution generation are reused for high-resolution generation. Dilated convolutions are involved. Compared with the original version:
+
+  1. We can generate high-resolution directly with the help of LinFusion instead of using patch-wise strategies. 
+  2. Insights in SDEdit are also applied here, so that the high-resolution branch does not need to go through full denoising steps.
+  3. Image are upscaled to 2x, 4x, 8x, ... resolutions instead of 1x, 2x, 3x, ...
+
+  **Please refer to `examples/inference/ultra_text2image_sdxl.ipynb` for an example of high-resolution text-to-image generation** (first generate 1024 resolution, then generate 2048, 4096, 8192, etc) **and `examples/inference/superres_sdxl.ipynb` for an example of image super resolution** (directly upscale to the target resolution, generally 2x is recommended and using it multiple times if you want higher scales). 
+
 * We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension!
 
 ## Training
@@ -94,6 +111,12 @@
 
   We use fp16 precision and 512 resolution for Stable Diffusion v-1.5 and bf16 precision and 768 resolution for Stable Diffusion v-2.1.
 
+* Training codes for Stable Diffusion XL are released in `src/train/distill_xl.py`. We present an exampler running script in `examples/train/distill_xl.sh`. You can run it on a 8-GPU machine via:
+
+  ```bash
+  bash ./examples/training/distill_xl.sh
+  ```
+
 ## ToDo
 
 - [x] Stable Diffusion 1.5 support.
@@ -101,6 +124,11 @@
 - [x] Stable Diffusion XL support.
 - [x] Release training code for LinFusion.
 - [ ] Release evaluation code for LinFusion.
+
+## Acknowledgement
+
+* We extend our gratitude to the authors of [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image) and [DemoFusion](https://github.com/PRIS-CV/DemoFusion) for their contributions, which inspire us a lot on applying LinFusion for high-resolution generation. 
+* We thank [@Adamdad](https://github.com/Adamdad) and [@yu-rp](https://github.com/yu-rp) for valuable discussions.
 
 ## Citation
 
@@ -116,3 +144,4 @@ If you finds this repo is helpful, please consider citing:
   primaryClass={cs.CV}
 }
 ```
+
