@@ -184,6 +184,12 @@ def parse_args():
         default=-1,
         help="For distributed training: local_rank",
     )
+    parser.add_argument(
+        "--mid_dim_scale",
+        type=int,
+        default=None,
+        help="The scale of the mid_dim of the linear attention. `mid_dim = dim_n // mid_dim_scale`",
+    )
 
     args = parser.parse_args()
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
@@ -240,12 +246,20 @@ def main():
     all_attn_outputs = []
     all_attn_outputs_teacher = []
 
-    # to construct a LinFusion model
-    linfusion_model = LinFusion.construct_for(
-        unet=unet,
-        load_pretrained=args.pretrained_linfusion_path is not None,
-        pretrained_model_name_or_path=args.pretrained_linfusion_path,
-    )
+    if args.pretrained_linfusion_path is not None:
+        # to construct a LinFusion model
+        linfusion_model = LinFusion.construct_for(
+            unet=unet,
+            load_pretrained=True,
+            pretrained_model_name_or_path=args.pretrained_linfusion_path,
+        )
+    else:
+        linfusion_config = LinFusion.get_default_config(unet = unet)
+        if args.mid_dim_scale is not None:
+            for each in linfusion_config['modules_list']:
+                each['projection_mid_dim'] = each['dim_n']//args.mid_dim_scale
+        linfusion = LinFusion(**linfusion_config)
+        linfusion.mount_to(unet = unet)
 
     def student_forward_hook(module, input, output):
         all_attn_outputs.append(output)
