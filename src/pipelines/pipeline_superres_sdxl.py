@@ -1112,15 +1112,13 @@ class StableDiffusionXLSuperResPipeline(
         height = height or default_size
         width = width or default_size
         
-        base_width = image.size[0]
-        base_height = image.size[1]
-        if base_width > base_height:
-            num_scales = math.ceil(width / base_width)
+        if width > height:
+            num_scales = math.ceil(width / default_size)
         else:
-            num_scales = math.ceil(height / base_height)
+            num_scales = math.ceil(height / default_size)
         assert num_scales > 1
-        sample_height = math.ceil(base_height * num_scales / self.vae_scale_factor)
-        sample_width = math.ceil(base_width * num_scales / self.vae_scale_factor)
+        sample_height = math.ceil(height / self.vae_scale_factor)
+        sample_width = math.ceil(width / self.vae_scale_factor)
         actual_height = sample_height * self.vae_scale_factor
         actual_width = sample_width * self.vae_scale_factor
         if actual_height != height or actual_width != width:
@@ -1200,23 +1198,10 @@ class StableDiffusionXLSuperResPipeline(
             self.scheduler, num_inference_steps, device, timesteps, sigmas
         )
 
-        # 5. Prepare latent variables
-        num_channels_latents = self.unet.config.in_channels
-        latents = self.prepare_latents(
-            batch_size * num_images_per_prompt,
-            num_channels_latents,
-            base_height,
-            base_width,
-            prompt_embeds.dtype,
-            device,
-            generator,
-            latents,
-        )
-
-        # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        # 5. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-        # 7. Prepare added time ids & embeddings
+        # 6. Prepare added time ids & embeddings
         add_text_embeds = pooled_prompt_embeds
         if self.text_encoder_2 is None:
             text_encoder_projection_dim = int(pooled_prompt_embeds.shape[-1])
@@ -1267,7 +1252,8 @@ class StableDiffusionXLSuperResPipeline(
             ).to(device=device, dtype=latents.dtype)
 
         # 8. Denoising loop
-        print(f'{num_scales}x Super Resolution, Resolution (width, height) is ({actual_width}, {actual_height})')
+        print(f'Scale w.r.t. the default resolution is {num_scales}, '
+              f'Resolution (width, height) is ({actual_width}, {actual_height})')
         
         timesteps, num_inference_steps = self.get_timesteps(
             num_inference_steps,
@@ -1493,3 +1479,4 @@ class StableDiffusionXLSuperResPipeline(
             return (image,)
 
         return StableDiffusionXLPipelineOutput(images=image)
+    
