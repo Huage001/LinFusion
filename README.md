@@ -22,6 +22,8 @@
 
 ## 🔥News
 
+**[2024/09/26]** We enable **16K** image generation with merely **24G** video memory! Please refer to the example [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/superres_sdxl_low_v_mem.ipynb)!
+
 **[2024/09/20]** We release **a more advanced pipeline for ultra-high-resolution image generation using SD-XL**! It can be used for [text-to-image generation](https://github.com/Huage001/LinFusion/blob/main/examples/inference/ultra_text2image_sdxl.ipynb) and [image super-resolution](https://github.com/Huage001/LinFusion/blob/main/examples/inference/superres_sdxl.ipynb)!
 
 **[2024/09/20]** We release training codes for Stable Diffusion XL [here](https://github.com/Huage001/LinFusion/blob/main/src/train/distill_xl.py)!
@@ -81,7 +83,7 @@ From the perspective of efficiency, our method supports high-resolution generati
 
 * [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image). **The basic idea is to generate a low-resolution result at first, based on which we gradually upscale the image.**
 
-  **Please refer to `examples/inference/ultra_text2image_w_sdedit.ipynb` for an example.** Note that 16K generation is only currently available for 80G GPUs. We will try to relax this constraint by implementing tiling strategies.
+  **Please refer to `examples/inference/ultra_text2image_w_sdedit.ipynb` for an example.**
 
 * [DemoFusion](https://github.com/PRIS-CV/DemoFusion). It also generates high-resolution images from low-resolution results. Latents of the low-resolution generation are reused for high-resolution generation. Dilated convolutions are involved. Compared with the original version:
 
@@ -90,6 +92,9 @@ From the perspective of efficiency, our method supports high-resolution generati
   3. Image are upscaled to 2x, 4x, 8x, ... resolutions instead of 1x, 2x, 3x, ...
 
   **Please refer to `examples/inference/ultra_text2image_sdxl.ipynb` for an example of high-resolution text-to-image generation** (first generate 1024 resolution, then generate 2048, 4096, 8192, etc) **and `examples/inference/superres_sdxl.ipynb` for an example of image super resolution** (directly upscale to the target resolution, generally 2x is recommended and using it multiple times if you want higher scales). 
+
+
+* Above codes for 16K image generation require a GPU with 80G video memory. **If you encounter OOM issues, you may consider `examples/inference/superres_sdxl_low_w_mem.ipynb`, which requires only 24G video memory.** We achieve this by 1) chunked forward of classifier-free guidance inference, 2) chunked forward of feed-forward network in Transformer blocks, 3) in-placed activation functions in ResNets, and 4) caching UNet residuals on CPU.
 
 * We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension!
 
