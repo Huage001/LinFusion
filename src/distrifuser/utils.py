@@ -1,6 +1,7 @@
 import torch
 from packaging import version
 from torch import distributed as dist
+from typing import List, Tuple
 
 
 def check_env():
@@ -128,7 +129,7 @@ class PatchParallelismCommManager:
         self.handles = None
 
     def register_tensor(
-        self, shape: tuple[int, ...] or list[int], torch_dtype: torch.dtype, layer_type: str = None
+        self, shape: Tuple[int, ...] or List[int], torch_dtype: torch.dtype, layer_type: str = None
     ) -> int:
         if self.torch_dtype is None:
             self.torch_dtype = torch_dtype
@@ -163,7 +164,7 @@ class PatchParallelismCommManager:
         ]
         self.handles = [None for _ in range(len(self.starts))]
 
-    def get_buffer_list(self, idx: int) -> list[torch.Tensor]:
+    def get_buffer_list(self, idx: int) -> List[torch.Tensor]:
         buffer_list = [t[self.starts[idx] : self.ends[idx]].view(self.shapes[idx]) for t in self.buffer_list]
         return buffer_list
 

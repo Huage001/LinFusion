@@ -1,3 +1,4 @@
+
 <div align="center">
 
 # LinFusion
@@ -21,6 +22,8 @@
 ![](./assets/picture.png)
 
 ## 🔥News
+
+**[2024/09/27]** We successfully integrate LinFusion to [DistriFusion](https://github.com/mit-han-lab/distrifuser), an effective and efficient strategy for generating an image in parallel, and achieve more significant acceleration! Please refer to the example [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/sdxl_distrifusion_example.py)!
 
 **[2024/09/26]** We enable **16K** image generation with merely **24G** video memory! Please refer to the example [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/superres_sdxl_low_v_mem.ipynb)!
 
@@ -96,7 +99,14 @@ From the perspective of efficiency, our method supports high-resolution generati
 
 * Above codes for 16K image generation require a GPU with 80G video memory. **If you encounter OOM issues, you may consider `examples/inference/superres_sdxl_low_w_mem.ipynb`, which requires only 24G video memory.** We achieve this by 1) chunked forward of classifier-free guidance inference, 2) chunked forward of feed-forward network in Transformer blocks, 3) in-placed activation functions in ResNets, and 4) caching UNet residuals on CPU.
 
-* We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension!
+* [DistriFusion](https://github.com/mit-han-lab/distrifuser). Alternatively, if you have multiple GPU cards, you can try integrating LinFusion to DistriFusion, which achieves **more significant acceleration due to its linearity and thus almost constant communication cost**. You can run an minimal example with:
+
+  ```bash
+  cp examples/inference/sdxl_distrifusion_example.py .
+  torchrun --nproc_per_node=$N_GPUS sdxl_distrifusion_example.py
+  ```
+
+* We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension! **Feel free to create pull requests if you come up with better solutions!**
 
 ## Training
 
@@ -132,8 +142,8 @@ From the perspective of efficiency, our method supports high-resolution generati
 
 ## Acknowledgement
 
-* We extend our gratitude to the authors of [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image) and [DemoFusion](https://github.com/PRIS-CV/DemoFusion) for their contributions, which inspire us a lot on applying LinFusion for high-resolution generation. 
-* We thank [@Adamdad](https://github.com/Adamdad) and [@yu-rp](https://github.com/yu-rp) for valuable discussions.
+* We extend our gratitude to the authors of [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image), [DemoFusion](https://github.com/PRIS-CV/DemoFusion), and [DistriFusion](https://github.com/mit-han-lab/distrifuser) for their contributions, which inspire us a lot on applying LinFusion for high-resolution generation. 
+* We thank [@Adamdad](https://github.com/Adamdad), [@yu-rp](https://github.com/yu-rp), and [@czg1225](https://github.com/czg1225) for valuable discussions.
 
 ## Citation
 
@@ -149,4 +159,3 @@ If you finds this repo is helpful, please consider citing:
   primaryClass={cs.CV}
 }
 ```
-

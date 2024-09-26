@@ -1,6 +1,5 @@
 import torch
 from diffusers.models.attention import Attention
-from diffusers.utils import USE_PEFT_BACKEND
 from torch import distributed as dist
 from torch import nn
 from torch.nn import functional as F
@@ -64,8 +63,7 @@ class DistriCrossAttentionPP(DistriAttentionPP):
             hidden_states.shape if encoder_hidden_states is None else encoder_hidden_states.shape
         )
 
-        args = () if USE_PEFT_BACKEND else (scale,)
-        query = attn.to_q(hidden_states, *args)
+        query = attn.to_q(hidden_states)
 
         if encoder_hidden_states is None:
             encoder_hidden_states = hidden_states
@@ -90,7 +88,7 @@ class DistriCrossAttentionPP(DistriAttentionPP):
         hidden_states = hidden_states.to(query.dtype)
 
         # linear proj
-        hidden_states = attn.to_out[0](hidden_states, *args)
+        hidden_states = attn.to_out[0](hidden_states)
         # dropout
         hidden_states = attn.to_out[1](hidden_states)
 
@@ -117,8 +115,7 @@ class DistriSelfAttentionPP(DistriAttentionPP):
 
         batch_size, sequence_length, _ = hidden_states.shape
 
-        args = () if USE_PEFT_BACKEND else (scale,)
-        query = attn.to_q(hidden_states, *args)
+        query = attn.to_q(hidden_states)
 
         encoder_hidden_states = hidden_states
 
@@ -156,7 +153,7 @@ class DistriSelfAttentionPP(DistriAttentionPP):
         hidden_states = hidden_states.to(query.dtype)
 
         # linear proj
-        hidden_states = attn.to_out[0](hidden_states, *args)
+        hidden_states = attn.to_out[0](hidden_states)
         # dropout
         hidden_states = attn.to_out[1](hidden_states)
 
@@ -208,20 +205,19 @@ class DistriGeneralizedLinearAttentionPP(BaseModule):
 
         batch_size, sequence_length, _ = hidden_states.shape
 
-        args = () if USE_PEFT_BACKEND else (scale,)
-        query = attn.to_q(hidden_states + self.to_q_(hidden_states))
+        query = attn.to_q(hidden_states + attn.to_q_(hidden_states))
 
         encoder_hidden_states = hidden_states
-        key = attn.to_k(encoder_hidden_states + self.to_k_(encoder_hidden_states))
-        value = self.to_v(encoder_hidden_states)
+        key = attn.to_k(encoder_hidden_states + attn.to_k_(encoder_hidden_states))
+        value = attn.to_v(encoder_hidden_states)
 
-        query = self.head_to_batch_dim(query)
-        key = self.head_to_batch_dim(key)
-        value = self.head_to_batch_dim(value)
+        query = attn.head_to_batch_dim(query)
+        key = attn.head_to_batch_dim(key)
+        value = attn.head_to_batch_dim(value)
 
         query = F.elu(query) + 1.0
         key = F.elu(key) + 1.0
-        z = key.mean(dim=-2, keepdim=True).transpose(-2, -1) + 1e-4
+        z = key.mean(dim=-2, keepdim=True).transpose(-2, -1)
         kv = (key.transpose(-2, -1) * (sequence_length**-0.5)) @ (
             value * (sequence_length**-0.5)
         )
@@ -243,11 +239,17 @@ class DistriGeneralizedLinearAttentionPP(BaseModule):
                     self.comm_manager.enqueue(self.idx, kv)
 
         z = full_kv[:, :, -1:]
+        z = query @ z + 1e-4
         kv = full_kv[:, :, :-1]
         
         hidden_states = query @ kv / z
 
-        hidden_states = self.batch_to_head_dim(hidden_states)
+        hidden_states = attn.batch_to_head_dim(hidden_states)
+        
+        # linear proj
+        hidden_states = attn.to_out[0](hidden_states)
+        # dropout
+        hidden_states = attn.to_out[1](hidden_states)
 
         if attn.residual_connection:
             hidden_states = hidden_states + residual

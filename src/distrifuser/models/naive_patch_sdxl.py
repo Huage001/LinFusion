@@ -2,6 +2,7 @@ import torch
 from diffusers import UNet2DConditionModel
 from diffusers.models.unets.unet_2d_condition import UNet2DConditionOutput
 from torch import distributed as dist
+from typing import Tuple, Dict
 
 from .base_model import BaseModel
 from ..utils import DistriConfig
@@ -20,11 +21,11 @@ class NaivePatchUNet(BaseModel):  # for Patch Parallelism
         class_labels: torch.Tensor or None = None,
         timestep_cond: torch.Tensor or None = None,
         attention_mask: torch.Tensor or None = None,
-        cross_attention_kwargs: dict[str, any] or None = None,
-        added_cond_kwargs: dict[str, torch.Tensor] or None = None,
-        down_block_additional_residuals: tuple[torch.Tensor] or None = None,
+        cross_attention_kwargs: Dict[str, any] or None = None,
+        added_cond_kwargs: Dict[str, torch.Tensor] or None = None,
+        down_block_additional_residuals: Tuple[torch.Tensor] or None = None,
         mid_block_additional_residual: torch.Tensor or None = None,
-        down_intrablock_additional_residuals: tuple[torch.Tensor] or None = None,
+        down_intrablock_additional_residuals: Tuple[torch.Tensor] or None = None,
         encoder_attention_mask: torch.Tensor or None = None,
         return_dict: bool = True,
         record: bool = False,

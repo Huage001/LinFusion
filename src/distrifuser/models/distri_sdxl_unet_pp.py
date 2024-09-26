@@ -10,7 +10,9 @@ from ..modules.base_module import BaseModule
 from ..modules.pp.conv2d import DistriConv2dPP
 from ..modules.pp.groupnorm import DistriGroupNorm
 from ..utils import DistriConfig
+from ...linfusion import GeneralizedLinearAttention
 
+from typing import Dict, Tuple
 
 class DistriUNetPP(BaseModel):  # for Patch Parallelism
     def __init__(self, model: UNet2DConditionModel, distri_config: DistriConfig):
@@ -28,15 +30,15 @@ class DistriUNetPP(BaseModel):  # for Patch Parallelism
                             submodule, distri_config, is_first_layer=subname == "conv_in"
                         )
                         setattr(module, subname, wrapped_submodule)
+                    elif isinstance(submodule, GeneralizedLinearAttention):
+                        wrapped_submodule = DistriGeneralizedLinearAttentionPP(submodule, distri_config)
+                        setattr(module, subname, wrapped_submodule)
                     elif isinstance(submodule, Attention):
                         if subname == "attn1":  # self attention
                             wrapped_submodule = DistriSelfAttentionPP(submodule, distri_config)
                         else:  # cross attention
                             assert subname == "attn2"
                             wrapped_submodule = DistriCrossAttentionPP(submodule, distri_config)
-                        setattr(module, subname, wrapped_submodule)
-                    elif isinstance(submodule, DistriGeneralizedLinearAttentionPP):
-                        wrapped_submodule = DistriGeneralizedLinearAttentionPP(submodule, distri_config)
                         setattr(module, subname, wrapped_submodule)
                     elif isinstance(submodule, nn.GroupNorm):
                         wrapped_submodule = DistriGroupNorm(submodule, distri_config)
@@ -52,11 +54,11 @@ class DistriUNetPP(BaseModel):  # for Patch Parallelism
         class_labels: torch.Tensor or None = None,
         timestep_cond: torch.Tensor or None = None,
         attention_mask: torch.Tensor or None = None,
-        cross_attention_kwargs: dict[str, any] or None = None,
-        added_cond_kwargs: dict[str, torch.Tensor] or None = None,
-        down_block_additional_residuals: tuple[torch.Tensor] or None = None,
+        cross_attention_kwargs: Dict[str, any] or None = None,
+        added_cond_kwargs: Dict[str, torch.Tensor] or None = None,
+        down_block_additional_residuals: Tuple[torch.Tensor] or None = None,
         mid_block_additional_residual: torch.Tensor or None = None,
-        down_intrablock_additional_residuals: tuple[torch.Tensor] or None = None,
+        down_intrablock_additional_residuals: Tuple[torch.Tensor] or None = None,
         encoder_attention_mask: torch.Tensor or None = None,
         return_dict: bool = True,
         record: bool = False,
