@@ -16,7 +16,7 @@ import PIL.Image
 import torch
 from diffusers import AutoPipelineForText2Image
 from ..linfusion import LinFusion
-import distributed as dist
+from . import distributed as dist
 
 
 #----------------------------------------------------------------------------
@@ -142,9 +142,11 @@ def main(outdir, subdirs, seeds, max_batch_size, num_fid_samples, text_prompts,r
         torch.distributed.barrier()
 
     # Evaluate
-    
-    pipeline = AutoPipelineForText2Image.from_pretrained(repo_id).to(device, dtype)
-    _ = LinFusion.construct_for(pipeline)
+    if use_fp16:
+        pipeline = AutoPipelineForText2Image.from_pretrained(repo_id, variant='fp16', local_files_only=True).to(device, dtype)
+    else:
+        pipeline = AutoPipelineForText2Image.from_pretrained(repo_id).to(device, dtype)
+    # _ = LinFusion.construct_for(pipeline)
     resolution = resolution or pipeline.default_sample_size * pipeline.vae_scale_factor
     
     # Other ranks follow.

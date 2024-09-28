@@ -15,7 +15,7 @@ from PIL import Image
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from data_util import EvalDataset, CenterCropLongEdge
+from .data_util import EvalDataset, CenterCropLongEdge
 
 
 
@@ -156,7 +156,7 @@ if __name__ == "__main__":
                         default="/home/GigaGAN_images/",
                         help="location of fake images for evaluation")
     parser.add_argument("--caption_file",
-                        default="captions.txt",
+                        default="assets/captions.txt",
                         help="location of txt file containing image captions")
     parser.add_argument("--eval_res", default=256, type=int)
     parser.add_argument("--batch_size", default=8, type=int)

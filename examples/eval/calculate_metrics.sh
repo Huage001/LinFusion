@@ -10,4 +10,4 @@ clip_model="ViT-G/14"
 caption_file='assets/captions.txt'
 fake_dir='eval_results/sdxl'
 
-python3 evaluation.py --how_many $how_many --ref_data $ref_data --ref_dir $ref_dir --ref_type $ref_type --fake_dir $fake_dir --eval_res $eval_res --batch_size $batch_size --clip_model $clip_model
+python -m src.eval.calculate_metrics --how_many $how_many --ref_data $ref_data --ref_dir $ref_dir --ref_type $ref_type --fake_dir $fake_dir --eval_res $eval_res --batch_size $batch_size --clip_model $clip_model --caption_file $caption_file
