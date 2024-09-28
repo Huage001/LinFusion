@@ -28,7 +28,7 @@ class DistriSDXLPipeline:
         pipeline = StableDiffusionXLPipeline.from_pretrained(
             pretrained_model_name_or_path, torch_dtype=torch_dtype, **kwargs
         ).to(device)
-        # _ = LinFusion.construct_for(pipeline)
+        _ = LinFusion.construct_for(pipeline)
 
         if distri_config.parallelism == "patch":
             pipeline.unet = DistriUNetPP(pipeline.unet, distri_config)
