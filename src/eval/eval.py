@@ -145,7 +145,7 @@ def main(outdir, subdirs, seeds, max_batch_size, num_fid_samples, text_prompts,r
 
     # Evaluate
     if use_fp16:
-        pipeline = AutoPipelineForText2Image.from_pretrained(repo_id, variant='fp16', local_files_only=True).to(device, dtype)
+        pipeline = AutoPipelineForText2Image.from_pretrained(repo_id, variant='fp16').to(device, dtype)
     else:
         pipeline = AutoPipelineForText2Image.from_pretrained(repo_id).to(device, dtype)
     _ = LinFusion.construct_for(pipeline)
