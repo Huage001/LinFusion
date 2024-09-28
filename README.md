@@ -108,7 +108,7 @@ From the perspective of efficiency, our method supports high-resolution generati
 * [DistriFusion](https://github.com/mit-han-lab/distrifuser). Alternatively, if you have multiple GPU cards, you can try integrating LinFusion to DistriFusion, which achieves **more significant acceleration due to its linearity and thus almost constant communication cost**. You can run an minimal example with:
 
   ```bash
-  torchrun --nproc_per_node=$N_GPUS examples.inference.sdxl_distrifusion_example
+  torchrun --nproc_per_node=$N_GPUS -m examples.inference.sdxl_distrifusion_example
   ```
   
 * We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension! **Feel free to create pull requests if you come up with better solutions!**
