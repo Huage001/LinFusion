@@ -114,6 +114,7 @@ def compress_to_npz(folder_path, num=50000):
 @click.option('--text_prompts', 'text_prompts',   help='captions filename; the default [prompts/captions.txt] consists of 30k COCO2014 prompts', metavar='PATH|URL',         type=str, default='assets/captions.txt', show_default=True)
 @click.option('--repo_id', 'repo_id',   help='diffusion pipeline filename', metavar='PATH|URL',                     type=str, default='runwayml/stable-diffusion-v1-5', show_default=True)
 @click.option('--use_fp16',             help='Enable mixed-precision training', metavar='BOOL',                     type=bool, default=True, show_default=True)
+@click.option('--use_bf16',             help='Enable mixed-precision training', metavar='BOOL',                     type=bool, default=False, show_default=True)
 @click.option('--enable_compress_npz',         help='Enable compressinve npz', metavar='BOOL',                             type=bool, default=False, show_default=True)
 @click.option('--num_steps_eval', 'num_steps_eval',      help='Set as 25 by default', metavar='INT',      type=click.IntRange(min=0), default=25, show_default=True)
 @click.option('--guidance_scale', 'guidance_scale',      help='Scale of classifier-free guidance. Set as 7.5 by default', metavar='FLOAT',      type=click.FloatRange(min=1.0), default=7.5, show_default=True)
@@ -121,11 +122,12 @@ def compress_to_npz(folder_path, num=50000):
 @click.option('--custom_seed',             help='Enable custom seed', metavar='BOOL',                     type=bool, default=False, show_default=True)
 
 
-def main(outdir, subdirs, seeds, max_batch_size, num_fid_samples, text_prompts,repo_id,device=torch.device('cuda'),use_fp16=True,enable_compress_npz=False,num_steps_eval=25,guidance_scale=7.5,resolution=None,custom_seed=False):
+def main(outdir, subdirs, seeds, max_batch_size, num_fid_samples, text_prompts,repo_id,device=torch.device('cuda'),use_fp16=True,use_bf16=False,enable_compress_npz=False,num_steps_eval=25,guidance_scale=7.5,resolution=None,custom_seed=False):
     
     dist.init()
     
     dtype=torch.float16 if use_fp16 else torch.float32
+    dtype=torch.bfloat16 if use_bf16 else torch.float32
         
     captions = read_file_to_sentences(text_prompts)
 
@@ -146,7 +148,7 @@ def main(outdir, subdirs, seeds, max_batch_size, num_fid_samples, text_prompts,r
         pipeline = AutoPipelineForText2Image.from_pretrained(repo_id, variant='fp16', local_files_only=True).to(device, dtype)
     else:
         pipeline = AutoPipelineForText2Image.from_pretrained(repo_id).to(device, dtype)
-    # _ = LinFusion.construct_for(pipeline)
+    _ = LinFusion.construct_for(pipeline)
     resolution = resolution or pipeline.default_sample_size * pipeline.vae_scale_factor
     
     # Other ranks follow.

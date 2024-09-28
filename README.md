@@ -1,4 +1,3 @@
-
 <div align="center">
 
 # LinFusion
@@ -12,7 +11,7 @@
 > <br>
 > [Songhua Liu](http://121.37.94.87/), 
 > [Weuhao Yu](https://whyu.me/), 
-> Zhenxiong Tan, 
+> [Zhenxiong Tan](https://scholar.google.com/citations?user=HP9Be6UAAAAJ&hl=en), 
 > and 
 > [Xinchao Wang](https://sites.google.com/site/sitexinchaowang/)
 > <br>
@@ -22,6 +21,8 @@
 ![](./assets/picture.png)
 
 ## 🔥News
+
+**[2024/09/28]** We release evaluation codes on the COCO benchmark! 
 
 **[2024/09/27]** We successfully integrate LinFusion to [DistriFusion](https://github.com/mit-han-lab/distrifuser), an effective and efficient strategy for generating an image in parallel, and achieve more significant acceleration! Please refer to the example [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/sdxl_distrifusion_example.py)!
 
@@ -80,6 +81,11 @@
 
 * `examples/inference/basic_usage.ipynb` shows a basic text-to-image example.
 
+## Gradio Demo
+
+* Currently, you can try LinFusion for SD-v1.5 online [here](https://huggingface.co/spaces/Huage001/LinFusion-SD-v1.5). Text-to-image, image-to-image, and IP-Adapter are supported currently.
+* We are building Gradio local demos for more base models and applications, so that everyone can deploy the demos locally.
+
 ## Ultrahigh-Resolution Generation
 
 From the perspective of efficiency, our method supports high-resolution generation such as 16K images. Nevertheless, directly applying diffusion models trained on low resolutions for higher-resolution generation can result in content distortion and duplication. To tackle this challenge, we apply following techniques:
@@ -102,10 +108,9 @@ From the perspective of efficiency, our method supports high-resolution generati
 * [DistriFusion](https://github.com/mit-han-lab/distrifuser). Alternatively, if you have multiple GPU cards, you can try integrating LinFusion to DistriFusion, which achieves **more significant acceleration due to its linearity and thus almost constant communication cost**. You can run an minimal example with:
 
   ```bash
-  cp examples/inference/sdxl_distrifusion_example.py .
-  torchrun --nproc_per_node=$N_GPUS sdxl_distrifusion_example.py
+  torchrun --nproc_per_node=$N_GPUS examples.inference.sdxl_distrifusion_example
   ```
-
+  
 * We are working on integrating LinFusion with more advanced approaches that are dedicated on high-resolution extension! **Feel free to create pull requests if you come up with better solutions!**
 
 ## Training
@@ -132,17 +137,49 @@ From the perspective of efficiency, our method supports high-resolution generati
   bash ./examples/training/distill_xl.sh
   ```
 
+## Evaluation
+
+Following [GigaGAN](https://github.com/mingukkang/GigaGAN/tree/main/evaluation), we use 30,000 COCO captions to generate 30,000 images for evaluation. FID against COCO val2014 is reported as a metric, and CLIP text cosine similarity is used to reflect the text-image alignment.
+
+* To evaluate LinFusion, first install the required packages:
+
+  ```bash
+  pip install git+https://github.com/openai/CLIP.git
+  pip install click clean-fid open_clip_torch
+  ```
+
+* Download and unzip COCO val2014 to `/path/to/coco`:
+
+  ```bash
+  wget http://images.cocodataset.org/zips/val2014.zip
+  unzip val2014.zip -d /path/to/coco
+  ```
+
+* Run `examples/eval/eval.sh` to generate images for evaluation. You may need to specify `outdir`, `repo_id`, `resolution`, etc.
+
+  ```bash
+  bash examples/eval/eval.sh
+  ```
+
+* Run `examples/eval/calculate_metrics.sh` to calculate the metrics. You may need to specify `/path/to/coco`, `fake_dir`, etc.
+
+  ```bash
+  bash examples/eval/calculate_metrics.sh
+  ```
+
 ## ToDo
 
 - [x] Stable Diffusion 1.5 support.
 - [x] Stable Diffusion 2.1 support. 
 - [x] Stable Diffusion XL support.
 - [x] Release training code for LinFusion.
-- [ ] Release evaluation code for LinFusion.
+- [x] Release evaluation code for LinFusion.
+- [ ] Gradio local interface.
 
 ## Acknowledgement
 
 * We extend our gratitude to the authors of [SDEdit](https://huggingface.co/docs/diffusers/v0.30.2/en/api/pipelines/stable_diffusion/img2img#image-to-image), [DemoFusion](https://github.com/PRIS-CV/DemoFusion), and [DistriFusion](https://github.com/mit-han-lab/distrifuser) for their contributions, which inspire us a lot on applying LinFusion for high-resolution generation. 
+* Our evaluation codes are adapted from [SiD-LSG](https://github.com/mingyuanzhou/SiD-LSG) and [GigaGAN](https://github.com/mingukkang/GigaGAN/tree/main/evaluation).
 * We thank [@Adamdad](https://github.com/Adamdad), [@yu-rp](https://github.com/yu-rp), and [@czg1225](https://github.com/czg1225) for valuable discussions.
 
 ## Citation
