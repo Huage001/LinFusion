@@ -127,7 +127,7 @@ def main(outdir, subdirs, seeds, max_batch_size, num_fid_samples, text_prompts,r
     dist.init()
     
     dtype=torch.float16 if use_fp16 else torch.float32
-    dtype=torch.bfloat16 if use_bf16 else torch.float32
+    dtype=torch.bfloat16 if use_bf16 else dtype
         
     captions = read_file_to_sentences(text_prompts)
 
