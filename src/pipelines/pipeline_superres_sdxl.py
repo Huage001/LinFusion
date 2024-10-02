@@ -927,7 +927,7 @@ class StableDiffusionXLSuperResPipeline(
         cosine_scale_1: Optional[float] = 3.,
         cosine_scale_2: Optional[float] = 1.,
         cosine_scale_3: Optional[float] = 1.,
-        gaussan_sigma: Optional[float] = 1.0,
+        gaussian_sigma: Optional[float] = 1.0,
         upscale_strength: Optional[float] = 0.32,
         device: Optional[Union[str, torch.device]] = None,
         **kwargs,
@@ -1349,7 +1349,7 @@ class StableDiffusionXLSuperResPipeline(
                 c3 = 0.99 * cosine_factor ** cosine_scale_3 + 1e-2
 
                 std_, mean_ = latents.std(dim=(2, 3), keepdim=True), latents.mean(dim=(2, 3), keepdim=True)
-                latents_gaussian = gaussian_filter(latents, kernel_size=(2 * num_scales - 1), sigma=gaussan_sigma * c3)
+                latents_gaussian = gaussian_filter(latents, kernel_size=(2 * num_scales - 1), sigma=gaussian_sigma * c3)
                 latents_gaussian = (latents_gaussian - latents_gaussian.mean(dim=(2, 3), keepdim=True)) / latents_gaussian.std(dim=(2, 3), keepdim=True) * std_ + mean_
 
                 # expand the latents if we are doing classifier free guidance
