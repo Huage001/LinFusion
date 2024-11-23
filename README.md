@@ -22,6 +22,8 @@
 
 ## 🔥News
 
+**[2024/11/24]** LinFusion is supported by [triton implementation](https://github.com/hp-l33/flash-bidirectional-linear-attention), which is even much more efficient than previous naive one! We would like to extend sincere gratitude to @[hp-133](https://github.com/hp-l33) for the amazing work!
+
 **[2024/09/28]** We release evaluation codes on the COCO benchmark! 
 
 **[2024/09/27]** We successfully integrate LinFusion to [DistriFusion](https://github.com/mit-han-lab/distrifuser), an effective and efficient strategy for generating an image in parallel, and achieve more significant acceleration! Please refer to the example [here](https://github.com/Huage001/LinFusion/blob/main/examples/inference/sdxl_distrifusion_example.py)!
