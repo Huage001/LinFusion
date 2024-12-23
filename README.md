@@ -22,6 +22,8 @@
 
 ## 🔥News
 
+**[2024/12/23]** We release CLEAR, a dedicated solution for pre-trained DiTs like FLUX and SD3 to accelerate high-resolution generation. Please checkout our [paper](https://arxiv.org/abs/2412.16112) and [code](https://github.com/Huage001/CLEAR).
+
 **[2024/11/24]** LinFusion is supported by [triton implementation](https://github.com/hp-l33/flash-bidirectional-linear-attention), which is even much more efficient than previous naive one! We would like to extend sincere gratitude to @[hp-133](https://github.com/hp-l33) for the amazing work!
 
 **[2024/09/28]** We release evaluation codes on the COCO benchmark! 
